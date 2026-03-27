@@ -38,7 +38,7 @@ def predict_failures(model_path, input_traces, output_path, nrows=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, default='borg_traces_data.csv')
-    parser.add_argument('--model', type=str, default='xgboost_model.pkl')
+    parser.add_argument('--model', type=str, default='random_forest_model.pkl')
     parser.add_argument('--output', type=str, default='predictions_enriched.csv')
     parser.add_argument('--nrows', type=int, default=10000, help="Number of rows to predict on for testing")
     args = parser.parse_args()

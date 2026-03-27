@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
 import joblib
 import argparse
 
@@ -42,16 +42,14 @@ def train_model(data_path, model_output):
         X, y, test_size=0.2, random_state=42, stratify=y if minority_class_count > 1 else None
     )
 
-    print(f"Training XGBoost classifier with scale_pos_weight={scale_pos_weight:.2f}")
-    # Initialize XGBClassifier
-    clf = XGBClassifier(
+    print(f"Training Random Forest classifier with balanced weights")
+    # Initialize RF
+    clf = RandomForestClassifier(
         n_estimators=100, 
-        learning_rate=0.1, 
-        max_depth=5, 
-        scale_pos_weight=scale_pos_weight, 
-        use_label_encoder=False, 
-        eval_metric='logloss',
-        random_state=42
+        max_depth=15, 
+        class_weight='balanced', 
+        random_state=42,
+        n_jobs=-1
     )
 
     clf.fit(X_train, y_train)
@@ -72,7 +70,7 @@ def train_model(data_path, model_output):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, default='processed_traces.csv')
-    parser.add_argument('--output', type=str, default='xgboost_model.pkl')
+    parser.add_argument('--output', type=str, default='random_forest_model.pkl')
     args = parser.parse_args()
     
     train_model(args.input, args.output)

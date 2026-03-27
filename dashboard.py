@@ -15,118 +15,151 @@ def load_data():
 
 df = load_data()
 
+def load_comp_data():
+    try:
+        df_comp = pd.read_csv('model_comparison_metrics.csv')
+        return df_comp
+    except FileNotFoundError:
+        return None
+
+comp_df = load_comp_data()
+
 st.title("🔍 Silent Failure Prediction Dashboard")
-st.markdown("Analyze distributed system execution traces evaluated by our XGBoost AI pipeline.")
+st.markdown("Analyze distributed system execution traces evaluated by our Random Forest AI pipeline.")
 
-if df is None:
-    st.error("No predictions found. Please run `python predict.py` first to generate contextual predictions.")
-    st.stop()
+# Define interactive tabs
+tab1, tab2 = st.tabs(["🚀 Real-Time Traces", "📊 Algorithmic Model Analytics"])
 
-# ----- KPI Section -----
-st.subheader("High-Level KPIs")
-col1, col2, col3 = st.columns(3)
-
-total_traces = len(df)
-total_failures = int(df['silent_failure_pred'].sum())
-failure_rate = (total_failures / total_traces) * 100
-
-with col1:
-    st.metric("Total Traces Analyzed", f"{total_traces:,}")
-with col2:
-    st.metric("Predicted Silent Failures", f"{total_failures:,}", delta_color="inverse")
-with col3:
-    st.metric("Failure Probability Rate", f"{failure_rate:.2f}%", delta_color="inverse")
-
-st.divider()
-
-# ----- Visualizations Section -----
-st.subheader("Analytical Breakdown")
-row1_col1, row1_col2 = st.columns(2)
-
-with row1_col1:
-    # Probability distribution
-    st.markdown("**AI Confidence Distribution**")
-    fig1 = px.histogram(
-        df, x="silent_failure_prob", 
-        nbins=50, 
-        color_discrete_sequence=["#FF4B4B"],
-        labels={"silent_failure_prob": "Failure Probability (0 to 1)"}
-    )
-    fig1.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig1, use_container_width=True)
-
-with row1_col2:
-    # Requested graph: failures by scheduling_class
-    st.markdown("**Failures by Scheduling Class**")
-    if 'scheduling_class' in df.columns:
-        # Only view rows where predicted failure is 1
-        failures_only = df[df['silent_failure_pred'] == 1]
-        sched_counts = failures_only['scheduling_class'].value_counts().reset_index()
-        sched_counts.columns = ['Scheduling Class', 'Failure Count']
-        fig2 = px.bar(
-            sched_counts, x="Scheduling Class", y="Failure Count", 
-            color="Scheduling Class", color_continuous_scale="Reds",
-        )
-        fig2.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True)
+with tab1:
+    if df is None:
+        st.error("No predictions found. Please run `python predict.py` first to generate contextual predictions.")
     else:
-        st.warning("`scheduling_class` column not found in output.")
+        # ----- KPI Section -----
+        st.subheader("High-Level KPIs")
+        col1, col2, col3 = st.columns(3)
 
-st.divider()
+        total_traces = len(df)
+        total_failures = int(df['silent_failure_pred'].sum())
+        failure_rate = (total_failures / total_traces) * 100
 
-# ----- Scatter / Correlation Section -----
-st.subheader("Resource Constraint Impacts")
-st.markdown("Highlighting how CPU and Memory allocations relate to predicted failure risks.")
+        with col1:
+            st.metric("Total Traces Analyzed", f"{total_traces:,}")
+        with col2:
+            st.metric("Predicted Silent Failures", f"{total_failures:,}", delta_color="inverse")
+        with col3:
+            st.metric("Failure Probability Rate", f"{failure_rate:.2f}%", delta_color="inverse")
 
-# Check for our parsed metrics
-cpu_col = 'resource_request_cpus' if 'resource_request_cpus' in df.columns else None
-mem_col = 'resource_request_memory' if 'resource_request_memory' in df.columns else None
+        st.divider()
 
-if cpu_col and mem_col:
-    # Scatter plot of Resource request vs Failure probability
-    scatter_df = df.sample(n=min(5000, len(df)), random_state=42)
+        # ----- Visualizations Section -----
+        st.subheader("Analytical Breakdown")
+        row1_col1, row1_col2 = st.columns(2)
+
+        with row1_col1:
+            st.markdown("**AI Confidence Distribution**")
+            fig1 = px.histogram(
+                df, x="silent_failure_prob", 
+                nbins=50, 
+                color_discrete_sequence=["#FF4B4B"],
+                labels={"silent_failure_prob": "Failure Probability (0 to 1)"}
+            )
+            fig1.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig1, use_container_width=True)
+
+        with row1_col2:
+            st.markdown("**Failures by Scheduling Class**")
+            if 'scheduling_class' in df.columns:
+                failures_only = df[df['silent_failure_pred'] == 1]
+                sched_counts = failures_only['scheduling_class'].value_counts().reset_index()
+                sched_counts.columns = ['Scheduling Class', 'Failure Count']
+                fig2 = px.bar(
+                    sched_counts, x="Scheduling Class", y="Failure Count", 
+                    color="Scheduling Class", color_continuous_scale="Reds",
+                )
+                fig2.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+                st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.warning("`scheduling_class` column not found in output.")
+
+        st.divider()
+
+        # ----- Scatter / Correlation Section -----
+        st.subheader("Resource Constraint Impacts")
+        st.markdown("Highlighting how CPU and Memory allocations relate to predicted failure risks.")
+
+        cpu_col = 'resource_request_cpus' if 'resource_request_cpus' in df.columns else None
+        mem_col = 'resource_request_memory' if 'resource_request_memory' in df.columns else None
+
+        if cpu_col and mem_col:
+            scatter_df = df.sample(n=min(5000, len(df)), random_state=42)
+            scat1, scat2 = st.columns(2)
+            
+            with scat1:
+                st.markdown("**CPU Allocation vs Risk**")
+                fig_cpu = px.scatter(
+                    scatter_df, x=cpu_col, y="silent_failure_prob", 
+                    color="silent_failure_prob", 
+                    color_continuous_scale="Reds",
+                    labels={cpu_col: "CPU Allocation Request", "silent_failure_prob": "Risk Probability"},
+                    opacity=0.6,
+                    render_mode='webgl'
+                )
+                fig_cpu.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+                st.plotly_chart(fig_cpu, use_container_width=True)
+                
+            with scat2:
+                st.markdown("**Memory Allocation vs Risk**")
+                fig_mem = px.scatter(
+                    scatter_df, x=mem_col, y="silent_failure_prob", 
+                    color="silent_failure_prob", 
+                    color_continuous_scale="Reds",
+                    labels={mem_col: "Memory Allocation Request", "silent_failure_prob": "Risk Probability"},
+                    opacity=0.6,
+                    render_mode='webgl'
+                )
+                fig_mem.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_mem, use_container_width=True)
+        else:
+            st.warning("Core ML resource metrics not available.")
+
+        st.divider()
+
+        # ----- Raw High Risk Data -----
+        st.subheader("🔥 Critical Action Required: High-Risk Traces (>90% Probability)")
+        st.markdown("Traces specifically flagged as virtually guaranteed to silently fail. Export for engineering review.")
+        critical_traces = df[df['silent_failure_prob'] > 0.90].sort_values('silent_failure_prob', ascending=False)
+
+        lead_cols = ['collection_id', 'machine_id', 'user', 'silent_failure_prob', 'silent_failure_pred']
+        av_lead_cols = [c for c in lead_cols if c in critical_traces.columns]
+        other_cols = [c for c in critical_traces.columns if c not in av_lead_cols]
+        critical_traces = critical_traces[av_lead_cols + other_cols]
+
+        st.dataframe(critical_traces, use_container_width=True, height=400)
+
+with tab2:
+    st.subheader("XGBoost vs. Random Forest Evaluator")
+    st.markdown("Strict side-by-side verification utilizing Scikit-Learn analytical metrics on exact mirrored test data.")
     
-    scat1, scat2 = st.columns(2)
-    
-    with scat1:
-        st.markdown("**CPU Allocation vs Risk**")
-        fig_cpu = px.scatter(
-            scatter_df, x=cpu_col, y="silent_failure_prob", 
-            color="silent_failure_prob", 
-            color_continuous_scale="Reds",
-            labels={cpu_col: "CPU Allocation Request", "silent_failure_prob": "Risk Probability"},
-            opacity=0.6,
-            render_mode='webgl'
-        )
-        fig_cpu.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
-        st.plotly_chart(fig_cpu, use_container_width=True)
+    if comp_df is not None:
+        failure_df = comp_df[comp_df['Class'] == 'Silent Failure (1)']
         
-    with scat2:
-        st.markdown("**Memory Allocation vs Risk**")
-        fig_mem = px.scatter(
-            scatter_df, x=mem_col, y="silent_failure_prob", 
-            color="silent_failure_prob", 
-            color_continuous_scale="Reds",
-            labels={mem_col: "Memory Allocation Request", "silent_failure_prob": "Risk Probability"},
-            opacity=0.6,
-            render_mode='webgl'
+        st.markdown('**Comparative Detection Power (Focus: Silent Failures)**')
+        # Group metrics for Plotly Bar
+        melted_df = failure_df.melt(id_vars=['Model'], value_vars=['Precision', 'Recall', 'F1-Score'], 
+                                    var_name='Metric', value_name='Score')
+                                    
+        fig_comp = px.bar(
+            melted_df, x='Metric', y='Score', color='Model', barmode='group',
+            color_discrete_sequence=['#FF4B4B', '#29B5E8'],
+            text_auto='.3f'
         )
-        fig_mem.update_layout(margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_mem, use_container_width=True)
-else:
-    st.warning("Core ML resource metrics not available. Check preprocessing.")
-
-st.divider()
-
-# ----- Raw High Risk Data -----
-st.subheader("🔥 Critical Action Required: High-Risk Traces (>90% Probability)")
-st.markdown("Traces specifically flagged as virtually guaranteed to silently fail. Export for engineering review.")
-critical_traces = df[df['silent_failure_prob'] > 0.90].sort_values('silent_failure_prob', ascending=False)
-
-# Reorganize table so ID tags are immediately visible
-lead_cols = ['collection_id', 'machine_id', 'user', 'silent_failure_prob', 'silent_failure_pred']
-av_lead_cols = [c for c in lead_cols if c in critical_traces.columns]
-other_cols = [c for c in critical_traces.columns if c not in av_lead_cols]
-critical_traces = critical_traces[av_lead_cols + other_cols]
-
-st.dataframe(critical_traces, use_container_width=True, height=400)
+        fig_comp.update_layout(yaxis_title="Percentile Score (1.0 = Max)", plot_bgcolor="rgba(0,0,0,0)")
+        fig_comp.update_yaxes(range=[0, 1.1])
+        st.plotly_chart(fig_comp, use_container_width=True)
+        
+        st.divider()
+        st.subheader("Raw Metric Breakdown")
+        st.dataframe(comp_df, use_container_width=True)
+        
+    else:
+        st.info("Algorithmic comparison metrics have not run yet. Executing background modeling job natively now...")

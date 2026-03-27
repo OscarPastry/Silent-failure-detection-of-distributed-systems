@@ -1,0 +1,24 @@
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# AI Model Binaries
+*.pkl
+
+# Logs and Temp Data
+*.log
+.temp/
+.tmp/
+
+# ---------- DATA ----------
+# Ignore ALL CSVs (to catch predictions, processed outputs, splits, etc)
+*.csv
+*.parquet
+

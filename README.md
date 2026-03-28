@@ -54,3 +54,9 @@ Launch the pipeline to instantly visualize your trace analytics and the comparat
 streamlit run dashboard.py
 ```
 This application will automatically bind precisely to `http://localhost:8501`.
+
+## To the change the number of records for Prediction
+Change this line in `predict.py`
+```bash
+parser.add_argument('--nrows', type=int, default=<YOUR NUMBER OF RECORDS>, help="Number of rows to predict on for testing")
+```

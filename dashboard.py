@@ -150,7 +150,7 @@ with tab2:
                                     
         fig_comp = px.bar(
             melted_df, x='Metric', y='Score', color='Model', barmode='group',
-            color_discrete_sequence=['#FF4B4B', '#29B5E8'],
+            color_discrete_sequence=['#FF4B4B', '#29B5E8', '#00CC96', '#AB63FA', '#FFA15A'],
             text_auto='.3f'
         )
         fig_comp.update_layout(yaxis_title="Percentile Score (1.0 = Max)", plot_bgcolor="rgba(0,0,0,0)")

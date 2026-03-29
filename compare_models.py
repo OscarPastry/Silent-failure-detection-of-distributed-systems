@@ -4,6 +4,9 @@ import time
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import LinearSVC
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 
 def run_comparison(input_csv="processed_traces_100k.csv", output_csv="model_comparison_metrics.csv"):
@@ -53,6 +56,33 @@ def run_comparison(input_csv="processed_traces_100k.csv", output_csv="model_comp
     rf_metrics = precision_recall_fscore_support(y_test, rf_preds, zero_division=0)
     rf_acc = accuracy_score(y_test, rf_preds)
     
+    print("\nTraining Logistic Regression...")
+    start_time = time.time()
+    lr = LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)
+    lr.fit(X_train, y_train)
+    lr_time = time.time() - start_time
+    lr_preds = lr.predict(X_test)
+    lr_metrics = precision_recall_fscore_support(y_test, lr_preds, zero_division=0)
+    lr_acc = accuracy_score(y_test, lr_preds)
+
+    print("\nTraining Decision Tree...")
+    start_time = time.time()
+    dt = DecisionTreeClassifier(class_weight='balanced', max_depth=15, random_state=42)
+    dt.fit(X_train, y_train)
+    dt_time = time.time() - start_time
+    dt_preds = dt.predict(X_test)
+    dt_metrics = precision_recall_fscore_support(y_test, dt_preds, zero_division=0)
+    dt_acc = accuracy_score(y_test, dt_preds)
+
+    print("\nTraining Support Vector Machine (Linear)...")
+    start_time = time.time()
+    svm = LinearSVC(class_weight='balanced', dual=False, max_iter=2000, random_state=42)
+    svm.fit(X_train, y_train)
+    svm_time = time.time() - start_time
+    svm_preds = svm.predict(X_test)
+    svm_metrics = precision_recall_fscore_support(y_test, svm_preds, zero_division=0)
+    svm_acc = accuracy_score(y_test, svm_preds)
+
     print("\nCompiling cross-analytics...")
     
     # Structure into clean DataFrame for Streamlit to instantly ingest
@@ -60,7 +90,10 @@ def run_comparison(input_csv="processed_traces_100k.csv", output_csv="model_comp
     
     for model_name, metrics, train_time, acc in [
         ('XGBoost', xgb_metrics, xgb_time, xgb_acc),
-        ('Random Forest', rf_metrics, rf_time, rf_acc)
+        ('Random Forest', rf_metrics, rf_time, rf_acc),
+        ('Logistic Regression', lr_metrics, lr_time, lr_acc),
+        ('Decision Tree', dt_metrics, dt_time, dt_acc),
+        ('SVM', svm_metrics, svm_time, svm_acc)
     ]:
         results.append({
             'Model': model_name,

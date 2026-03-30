@@ -28,7 +28,7 @@ st.title("🔍 Silent Failure Prediction Dashboard")
 st.markdown("Analyze distributed system execution traces evaluated by our Random Forest AI pipeline.")
 
 # Define interactive tabs
-tab1, tab2 = st.tabs(["🚀 Real-Time Traces", "📊 Algorithmic Model Analytics"])
+tab1, tab2 = st.tabs(["Real-Time Traces", "Algorithmic Model Analytics"])
 
 with tab1:
     if df is None:
@@ -137,11 +137,11 @@ with tab1:
         st.dataframe(critical_traces, use_container_width=True, height=400)
 
 with tab2:
-    st.subheader("XGBoost vs. Random Forest Evaluator")
+    st.subheader("XGBoost vs. Random Forest Evaluator vs. Logistic Regression vs. SVM vs. Decision Tree")
     st.markdown("Strict side-by-side verification utilizing Scikit-Learn analytical metrics on exact mirrored test data.")
     
     if comp_df is not None:
-        failure_df = comp_df[comp_df['Class'] == 'Silent Failure (1)']
+        failure_df = comp_df[comp_df['Class'] == 'Silent Failure (1)'].sort_values(by='F1-Score', ascending=True)
         
         st.markdown('**Comparative Detection Power (Focus: Silent Failures)**')
         # Group metrics for Plotly Bar
